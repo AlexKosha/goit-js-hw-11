@@ -1,6 +1,5 @@
 import { Notify } from "notiflix";
 import PhotosApiService from "./js/photos-api";
-import InfiniteScroll from "infinite-scroll";
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
 
@@ -52,10 +51,10 @@ function onLoadMore({target}) {
     
     photosApiService.fetchPhotos()
     .then(data => {
-         appendGalleryMarkup(data.hits)
+        appendGalleryMarkup(data.hits)
         
-        if (photosApiService.page >= data.totalHits) {
-            Notify.info("We're sorry, but you've reached the end of search results.")
+        if (photosApiService.page >= 2) {
+            Notify.warning("We're sorry, but you've reached the end of search results.")
             refs.loadMore.classList.replace('load-more', 'hidden')   
         }
 }).catch(err => console.log(err))
