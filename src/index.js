@@ -1,7 +1,6 @@
-
 import { Notify } from "notiflix";
 import PhotosApiService from "./js/photos-api";
-
+import InfiniteScroll from "infinite-scroll";
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
 
@@ -12,8 +11,6 @@ const refs ={
 }
 
 const photosApiService = new PhotosApiService();
-
-
 
 const galleryModal = new SimpleLightbox('.gallery .gallery__link', {
     captionsData: 'alt',
@@ -41,6 +38,7 @@ function onSearch(e){
         appendGalleryMarkup(data.hits)
 
         Notify.info(`Hooray! We found ${data.totalHits} images.`)
+
         if (photosApiService.page < data.totalHits) {
             refs.loadMore.classList.replace('hidden', 'load-more')
         }
@@ -54,7 +52,7 @@ function onLoadMore({target}) {
     
     photosApiService.fetchPhotos()
     .then(data => {
-        appendGalleryMarkup(data.hits)
+         appendGalleryMarkup(data.hits)
         
         if (photosApiService.page >= data.totalHits) {
             Notify.info("We're sorry, but you've reached the end of search results.")
@@ -68,7 +66,7 @@ function smoothScroll() {
     const { height: cardHeight } = refs.gallery
   .firstElementChild.getBoundingClientRect();
 
-scrollBy({
+window.scrollBy({
   top: cardHeight * 2,
   behavior: "smooth",
 });
@@ -80,7 +78,7 @@ function onOpenModal(e) {
     galleryModal.on('show.SimpleLightbox');
   
     galleryModal.on('close.SimpleLightbox');
-  }
+}
 
 function appendGalleryMarkup(photos){
     refs.gallery.insertAdjacentHTML('beforeend', createMarkup(photos));
@@ -91,8 +89,6 @@ function appendGalleryMarkup(photos){
 function clearGalleryContainer (){
     refs.gallery.innerHTML = ''
 }
-
-
 
 function createMarkup (arr){
 return arr.map(({tags, webformatURL, largeImageURL, views, likes, comments, downloads}) =>  `<div class="photo-card">
