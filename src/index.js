@@ -53,7 +53,7 @@ function onLoadMore({target}) {
     .then(data => {
         appendGalleryMarkup(data.hits)
         
-        if (photosApiService.page >= 2) {
+        if (photosApiService.page >= data.totalHits) {
             Notify.warning("We're sorry, but you've reached the end of search results.")
             refs.loadMore.classList.replace('load-more', 'hidden')   
         }
