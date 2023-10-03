@@ -6,7 +6,18 @@
     row-gap: 30px;
     align-items: center;
     justify-content: center;
+    scroll-behavior: smooth;
 }
+
+input{
+    border: none;
+    width: 220px;
+    height: 40px;
+}
+
+input:focus {
+    outline: none;
+  }
 
 button{
     margin: 0;
@@ -18,11 +29,12 @@ p{
 }
 
 .photo-card{
-    background-color: rgb(212, 211, 211);
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.5);
 }
 
 .photo-card:hover{
     background-color: rgb(153, 50, 50);
+    box-shadow: 5px 5px  5px rgba(0, 0, 0, 0.6);
     transform: scale(1.05);
 }
 
@@ -32,6 +44,9 @@ p{
     justify-content: space-between;
     padding-left: 10px;
     padding-right: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    text-align: center;
 }
 
 .info-item{
@@ -42,7 +57,6 @@ p{
 .search-form{
     display: flex;
     justify-content: center;
-    gap: 10px;
     padding-top: 10px;
     padding-bottom: 10px;
     background-color: aqua;
@@ -51,7 +65,7 @@ p{
 .search-btn{
     border: none;
     cursor: pointer;
-    background-color: blanchedalmond;
+    background-color: #fff;
 }
 
 .search-btn:hover{
@@ -62,6 +76,7 @@ b{
     font-weight: 500;
     display: block;
     text-align: center;
+    margin-top: 5px;
 }
 
 .load-more{

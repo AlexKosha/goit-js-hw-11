@@ -1,5 +1,6 @@
-import axios from "axios"
+
 import { Notify } from "notiflix";
+import PhotosApiService from "./js/photos-api";
 
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
@@ -10,87 +11,90 @@ const refs ={
     loadMore : document.querySelector('.hidden')
 }
 
-let page = 1
-let searchQuery = ''
+const photosApiService = new PhotosApiService();
 
-const galleryModal = new SimpleLightbox('.photo-card .gallery__link', {
+
+
+const galleryModal = new SimpleLightbox('.gallery .gallery__link', {
     captionsData: 'alt',
     captionDelay: 250,
   });
 
 refs.form.addEventListener('submit', onSearch)
 refs.loadMore.addEventListener('click', onLoadMore)
-
-async function fetchPhotos(query, page = 1,){
-    const BASE_URL = 'https://pixabay.com/api/'
-    const API_KEY = '39799676-ffca3689f9c6f15d7ef094ccc'
-
-    const options = new URLSearchParams({
-        key : API_KEY,
-        q : query,
-        per_page: 40,
-        page,
-        image_type :"photo",
-        orientation :"horizontal",
-        safesearch: "true"
-    });
-
-    try{
-        const res = await axios.get(`${BASE_URL}?${options}`)
-        const data = await res.data;
-        if(data.hits.lenght === 0){
-            return;
-        }
-        return data;
-    }catch(error){
-        return [];
-    }
-}
+refs.gallery.addEventListener('click', onOpenModal)
 
 function onSearch(e){
     e.preventDefault();
-
-    page = 1
     
-    refs.gallery.innerHTML= ''
     refs.loadMore.classList.replace('load-more', 'hidden')
 
-    searchQuery = e.currentTarget.elements.searchQuery.value
-    
-    fetchPhotos(searchQuery)
+    photosApiService.query = e.currentTarget.elements.searchQuery.value
+    photosApiService.resetPage();
+
+    photosApiService.fetchPhotos()
     .then((data) => {
-        refs.gallery.insertAdjacentHTML('beforeend', createMarkup(data.hits))
+        if (data.totalHits === 0) {
+            throw new Error (data.status)
+        }
+        clearGalleryContainer()
+        appendGalleryMarkup(data.hits)
 
         Notify.info(`Hooray! We found ${data.totalHits} images.`)
+        if (photosApiService.page < data.totalHits) {
+            refs.loadMore.classList.replace('hidden', 'load-more')
+        }
+    })
+    .catch(err => Notify.failure("Sorry, there are no images matching your search query. Please try again."))
 
-            if (page < data.totalHits) {
-                refs.loadMore.classList.replace('hidden', 'load-more')
-            }
-    }).catch(err => Notify.failure("Sorry, there are no images matching your search query. Please try again."))
 }
 
 function onLoadMore({target}) {
-    page += 1;
     target.disabled = true;
     
-    fetchPhotos(searchQuery, page)
+    photosApiService.fetchPhotos()
     .then(data => {
-
-        refs.gallery.insertAdjacentHTML('beforeend', createMarkup(data.hits));
-
-        if (page >= data.totalHits) {
+        appendGalleryMarkup(data.hits)
+        
+        if (photosApiService.page >= data.totalHits) {
             Notify.info("We're sorry, but you've reached the end of search results.")
-         refs.loadMore.classList.replace('load-more', 'hidden')   
+            refs.loadMore.classList.replace('load-more', 'hidden')   
         }
 }).catch(err => console.log(err))
 .finally(()=>(target.disabled = false)) ;
 }
 
+function smoothScroll() {
+    const { height: cardHeight } = refs.gallery
+  .firstElementChild.getBoundingClientRect();
+
+scrollBy({
+  top: cardHeight * 2,
+  behavior: "smooth",
+});
+}
+
+function onOpenModal(e) {
+    e.preventDefault();
+  
+    galleryModal.on('show.SimpleLightbox');
+  
+    galleryModal.on('close.SimpleLightbox');
+  }
+
+function appendGalleryMarkup(photos){
+    refs.gallery.insertAdjacentHTML('beforeend', createMarkup(photos));
+    smoothScroll();
+    galleryModal.refresh();
+}
+
+function clearGalleryContainer (){
+    refs.gallery.innerHTML = ''
+}
+
+
+
 function createMarkup (arr){
-    if(arr.length === 0){
-       Notify.failure("Sorry, there are no images matching your search query. Please try again.")
-       return '';
-    }
 return arr.map(({tags, webformatURL, largeImageURL, views, likes, comments, downloads}) =>  `<div class="photo-card">
     <a class="gallery__link" href="${largeImageURL}">
         <img src="${webformatURL}" alt="${tags}" loading="lazy" width='360' height='300'/>
