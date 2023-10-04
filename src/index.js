@@ -33,14 +33,18 @@ function onSearch(e){
         if (data.totalHits === 0) {
             throw new Error (data.status)
         }
+
+        photosApiService.total = data.totalHits;
+
         clearGalleryContainer()
         appendGalleryMarkup(data.hits)
+        smoothScroll(0.2)
 
         Notify.info(`Hooray! We found ${data.totalHits} images.`)
 
-        if (photosApiService.page < data.totalHits) {
-            refs.loadMore.classList.replace('hidden', 'load-more')
-        }
+        photosApiService.incrementPage()
+
+        showBtn (photosApiService.page, photosApiService.maxPage())
     })
     .catch(err => Notify.failure("Sorry, there are no images matching your search query. Please try again."))
 
@@ -52,21 +56,20 @@ function onLoadMore({target}) {
     photosApiService.fetchPhotos()
     .then(data => {
         appendGalleryMarkup(data.hits)
-        
-        if (photosApiService.page >= data.totalHits) {
-            Notify.warning("We're sorry, but you've reached the end of search results.")
-            refs.loadMore.classList.replace('load-more', 'hidden')   
-        }
+        smoothScroll(1)
+        photosApiService.incrementPage()
+        disabledBtn(photosApiService.page ,photosApiService.maxPage());
+
 }).catch(err => console.log(err))
 .finally(()=>(target.disabled = false)) ;
 }
 
-function smoothScroll() {
+function smoothScroll(number) {
     const { height: cardHeight } = refs.gallery
   .firstElementChild.getBoundingClientRect();
 
 window.scrollBy({
-  top: cardHeight * 2,
+  top: cardHeight * number,
   behavior: "smooth",
 });
 }
@@ -81,12 +84,24 @@ function onOpenModal(e) {
 
 function appendGalleryMarkup(photos){
     refs.gallery.insertAdjacentHTML('beforeend', createMarkup(photos));
-    smoothScroll();
     galleryModal.refresh();
 }
 
 function clearGalleryContainer (){
     refs.gallery.innerHTML = ''
+}
+
+function showBtn(page, maxPage){
+    if (page < maxPage) {
+        refs.loadMore.classList.replace('hidden', 'load-more')
+    }
+}
+
+function disabledBtn(page, maxPage){
+    if (page > maxPage) {
+        Notify.warning("We're sorry, but you've reached the end of search results.")
+        refs.loadMore.classList.replace('load-more', 'hidden')   
+    }
 }
 
 function createMarkup (arr){

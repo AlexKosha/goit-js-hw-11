@@ -9,6 +9,8 @@ export default class PhotosApiService {
     constructor(){
         this.searchQuery = ''
         this._page = 1
+        this.per_page = 40;
+        this.totalHits = 1;
     }
 
    async fetchPhotos(){ 
@@ -16,7 +18,7 @@ export default class PhotosApiService {
     const options = new URLSearchParams({
         key : API_KEY,
         q : this.searchQuery,
-        per_page: 40,
+        per_page: this.per_page,
         page : this.page,
         image_type :"photo",
         orientation :"horizontal",
@@ -25,12 +27,15 @@ export default class PhotosApiService {
     
         try{
             const response = await axios.get(`${BASE_URL}?${options}`)
-            this.incrementPage();
             return await response.data ;
         }catch(error){
             console.log('catch')
             return [];
         }
+    }
+
+    maxPage (){
+        return  Math.ceil(this.totalHits / this.per_page)
     }
 
     incrementPage(){
@@ -55,6 +60,14 @@ export default class PhotosApiService {
 
     set query(newQuery){
         this.searchQuery = newQuery;
+    }
+
+    get total(){
+        return this.totalHits
+    }
+
+    set total(newTotal){
+        this.totalHits = newTotal
     }
 
 }
