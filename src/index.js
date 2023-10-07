@@ -6,7 +6,7 @@ import "simplelightbox/dist/simple-lightbox.min.css";
 const refs ={
     form : document.querySelector(".search-form"),
     gallery : document.querySelector('.gallery'),
-    loadMore : document.querySelector('.hidden')
+    guard: document.querySelector('.js-guard')
 }
 
 const photosApiService = new PhotosApiService();
@@ -17,14 +17,11 @@ const galleryModal = new SimpleLightbox('.gallery .gallery__link', {
   });
 
 refs.form.addEventListener('submit', onSearch)
-refs.loadMore.addEventListener('click', onLoadMore)
 refs.gallery.addEventListener('click', onOpenModal)
 
 function onSearch(e){
     e.preventDefault();
     
-    refs.loadMore.classList.replace('load-more', 'hidden')
-
     photosApiService.query = e.currentTarget.elements.searchQuery.value
     photosApiService.resetPage();
 
@@ -38,30 +35,37 @@ function onSearch(e){
 
         clearGalleryContainer()
         appendGalleryMarkup(data.hits)
+        observer.observe(refs.guard)
         smoothScroll(0.2)
 
         Notify.info(`Hooray! We found ${data.totalHits} images.`)
 
         photosApiService.incrementPage()
-
-        showBtn (photosApiService.page, photosApiService.maxPage())
     })
     .catch(err => Notify.failure("Sorry, there are no images matching your search query. Please try again."))
 
 }
 
-function onLoadMore({target}) {
-    target.disabled = true;
-    
-    photosApiService.fetchPhotos()
-    .then(data => {
-        appendGalleryMarkup(data.hits)
-        smoothScroll(1)
-        photosApiService.incrementPage()
-        disabledBtn(photosApiService.page ,photosApiService.maxPage());
-
-}).catch(err => console.log(err))
-.finally(()=>(target.disabled = false)) ;
+let options = {
+    root: null,
+    rootMargin: "500px",
+    threshold: 1.0,
+  };
+  
+  let observer = new IntersectionObserver(onLoad, options);
+  
+  function onLoad(entries){
+    entries.forEach((entry) => {
+        if(entry.isIntersecting){
+            photosApiService.fetchPhotos()
+            .then(data => {
+                appendGalleryMarkup(data.hits)  
+                photosApiService.incrementPage()  
+                smoothScroll(2.3)  
+                disabledBtn(photosApiService.page ,photosApiService.maxPage());  
+         }).catch(err => console.log(err))
+        }
+    });
 }
 
 function smoothScroll(number) {
@@ -91,16 +95,10 @@ function clearGalleryContainer (){
     refs.gallery.innerHTML = ''
 }
 
-function showBtn(page, maxPage){
-    if (page < maxPage) {
-        refs.loadMore.classList.replace('hidden', 'load-more')
-    }
-}
-
 function disabledBtn(page, maxPage){
     if (page > maxPage) {
-        Notify.warning("We're sorry, but you've reached the end of search results.")
-        refs.loadMore.classList.replace('load-more', 'hidden')   
+        Notify.warning("We're sorry, but you've reached the end of search results.")  
+        observer.unobserve(refs.guard)
     }
 }
 
